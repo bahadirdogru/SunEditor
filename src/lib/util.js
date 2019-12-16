@@ -306,7 +306,7 @@ const util = {
      * @returns {Boolean}
      */
     isFormatElement: function (element) {
-        if (element && element.nodeType === 1 && /^(P|DIV|H[1-6]|LI|TH|TD)$/i.test(element.nodeName) && !this.isComponent(element) && !this.isWysiwygDiv(element)) return true;
+        if (element && element.nodeType === 1 && /^(P|DIV|H[1-6]|LI|TH|TD|PRE)$/i.test(element.nodeName) && !this.isComponent(element) && !this.isWysiwygDiv(element)) return true;
         return false;
     },
 

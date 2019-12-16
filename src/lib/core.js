@@ -3047,7 +3047,7 @@ export default function (context, pluginCallButtons, plugins, lang, _options) {
      */
     const event = {
         _directionKeyKeyCode: new _w.RegExp('^(8|13|32|46|33|34|35|36|37|38|39|40|46|98|100|102|104)$'),
-        _historyIgnoreKeycode: new _w.RegExp('^(1[6-7]|20|27|3[3-9]|40|45|11[2-9]|12[0-3]|144|145)$'),
+        _historyIgnoreKeycode: new _w.RegExp('^(1[6-7]|20|27|3[3-9]|40|45|11[2-9]|12[0-3]|144|145|8|13|32|46|33|34|35|36|37|38|39|40|46|98|100|102|104)$'),
         _onButtonsCheck: new _w.RegExp('^(STRONG|INS|EM|DEL|SUB|SUP|LI)$'),
         _frontZeroWidthReg: new _w.RegExp('^' + util.zeroWidthSpace + '+', ''),
         _keyCodeShortcut: {
@@ -3426,7 +3426,7 @@ export default function (context, pluginCallButtons, plugins, lang, _options) {
             const selectionNode = core.getSelectionNode();
             const formatEl = util.getFormatElement(selectionNode);
             const rangeEl = util.getRangeFormatElement(selectionNode);
-            if (core.getRange().collapsed && (!formatEl || formatEl === rangeEl) && targetElement.getAttribute('contenteditable') !== 'false') {
+            if (core.getRange().collapsed && !formatEl && targetElement.getAttribute('contenteditable') !== 'false') {
                 if (util.isList(rangeEl)) {
                     const oLi = util.createElement('LI');
                     const prevLi = selectionNode.nextElementSibling;
@@ -3748,6 +3748,24 @@ export default function (context, pluginCallButtons, plugins, lang, _options) {
                     
                     break;
                 case 13: /** enter key */
+                    if (/^PRE$/i.test(formatEl.nodeName) && !(!range.commonAncestorContainer.nextElementSibling && util.onlyZeroWidthSpace(formatEl.innerText.trim()))) {
+                        e.preventDefault();
+                        if (util.onlyZeroWidthSpace(selectionNode.textContent) && util.isBreak(selectionNode.previousSibling) && (!selectionNode.nextSibling || util.onlyZeroWidthSpace(selectionNode.nextSibling.textContent))) {
+                            util.removeItem(selectionNode);
+                            const newEl = core.appendFormatTag(rangeEl, 'P');
+                            util.copyFormatAttributes(newEl, formatEl);
+                            util.removeItemAllParents(formatEl);
+                            core.setRange(newEl, 1, newEl, 1);
+                            break;
+                        }
+                        const br = util.createElement('BR');
+                        const z = util.createTextNode(util.zeroWidthSpace);
+                        core.insertNode(br);
+                        br.parentNode.insertBefore(z, br.nextSibling);
+                        core.setRange(z, 1, z, 1);
+                        break;
+                    }
+
                     if (selectRange) break;
 
                     const figcaption = util.getParentElement(rangeEl, 'FIGCAPTION');
@@ -3823,7 +3841,7 @@ export default function (context, pluginCallButtons, plugins, lang, _options) {
         onKeyUp_wysiwyg: function (e) {
             core._editorRange();
             const keyCode = e.keyCode;
-            const ctrl = e.ctrlKey || e.metaKey;
+            const ctrl = e.ctrlKey || e.metaKey || keyCode === 91 || keyCode === 92;
             const alt = e.altKey;
             let selectionNode = core.getSelectionNode();
 
@@ -3852,7 +3870,7 @@ export default function (context, pluginCallButtons, plugins, lang, _options) {
 
             const formatEl = util.getFormatElement(selectionNode);
             const rangeEl = util.getRangeFormatElement(selectionNode);
-            if (!formatEl || formatEl === rangeEl) {
+            if (!formatEl) {
                 core.execCommand('formatBlock', false, util.isRangeFormatElement(rangeEl) ? 'DIV' : 'P');
                 core.focus();
                 selectionNode = core.getSelectionNode();
@@ -3866,6 +3884,7 @@ export default function (context, pluginCallButtons, plugins, lang, _options) {
 
             const textKey = !ctrl && !alt && !event._historyIgnoreKeycode.test(keyCode);
 
+            // delete zero with space
             if (textKey && util.zeroWidthRegExp.test(selectionNode.textContent)) {
                 const range = core.getRange();
                 const s = range.startOffset, e = range.endOffset;

@@ -46,7 +46,7 @@ export default {
             
             if (typeof format === 'string' && defaultFormats.indexOf(format) > -1) {
                 tagName = format.toLowerCase();
-                command = tagName === 'pre' || tagName === 'blockquote' ? 'range' : 'replace';
+                command = tagName === 'blockquote' ? 'range' : 'replace';
                 h = /^h/.test(tagName) ? tagName.match(/\d+/)[0] : '';
                 name = lang_toolbar['tag_' + (h ? 'h' : tagName)] + h;
                 attrs = '';
@@ -173,16 +173,27 @@ export default {
             // change format tag
             this.setRange(this.util.getNodeFromPath(firstPath, first), startOffset, this.util.getNodeFromPath(lastPath, last), endOffset);
             selectedFormsts = this.getSelectedElementsAndComponents();
-            for (let i = 0, len = selectedFormsts.length, node, newFormat; i < len; i++) {
+            const isPre = /^PRE$/i.test(value);
+            for (let i = 0, len = selectedFormsts.length, node, newFormat, parent, prev, prevParent; i < len; i++) {
                 node = selectedFormsts[i];
                 
                 if (node.nodeName.toLowerCase() !== value.toLowerCase() && !this.util.isComponent(node)) {
-                    newFormat = tag.cloneNode(false);
-                    this.util.copyFormatAttributes(newFormat, node);
-                    newFormat.innerHTML = node.innerHTML;
+                    parent = node.parentNode;
 
-                    node.parentNode.insertBefore(newFormat, node);
-                    this.util.removeItem(node);
+                    if (isPre && parent === prevParent) {
+                        prev.innerHTML += '<br>' + node.innerHTML;
+                        this.util.removeItem(node);
+                    } else {
+                        newFormat = tag.cloneNode(false);
+                        this.util.copyFormatAttributes(newFormat, node);
+                        newFormat.innerHTML = node.innerHTML;
+    
+                        parent.insertBefore(newFormat, node);
+                        this.util.removeItem(node);
+                        prev = newFormat;
+                    }
+
+                    prevParent = parent;
                 }
 
                 if (i === 0) first = newFormat || node;
