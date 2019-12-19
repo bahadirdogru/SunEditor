@@ -360,15 +360,41 @@ export default function (context, pluginCallButtons, plugins, lang, _options) {
         focus: function () {
             if (context.element.wysiwygFrame.style.display === 'none') return;
 
-            const caption = util.getParentElement(this.getSelectionNode(), 'figcaption');
-            if (caption) {
-                caption.focus();
-            } else {
-                context.element.wysiwyg.focus();
+            try {
+                const range = this.getRange();
+                this.setRange(range.startContainer, range.startOffset);
+            } catch (e) {
+                const caption = util.getParentElement(this.getSelectionNode(), 'figcaption');
+                if (caption) {
+                    caption.focus();
+                } else {
+                    context.element.wysiwyg.focus();
+                }
+
+                this._editorRange();
             }
 
-            this._editorRange();
             event._findButtonEffectTag();
+        },
+
+        /**
+         * @description If "focusEl" is a component, then that component is selected; if it is a format element, the last text is selected
+         * @param {Element} focusEl Focus element
+         */
+        focusEdge: function (focusEl) {
+            if (util.isComponent(focusEl)) {
+                const imageComponent = focusEl.querySelector('IMG');
+                const videoComponent = focusEl.querySelector('IFRAME');
+    
+                if (imageComponent) {
+                    this.selectComponent(imageComponent, 'image');
+                } else if (videoComponent) {
+                    this.selectComponent(videoComponent, 'video');
+                }
+            } else {
+                focusEl = util.getChildElement(focusEl, function (current) { return current.childNodes.length === 0 || current.nodeType === 3; }, true);
+                this.setRange(focusEl, focusEl.textContent.length, focusEl, focusEl.textContent.length);
+            }
         },
 
         /**
@@ -650,6 +676,36 @@ export default function (context, pluginCallButtons, plugins, lang, _options) {
             if (!notHistoryPush) this.history.push(false);
 
             return oNode;
+        },
+
+        /**
+         * @description The component(image, video) is selected and the resizing module is called.
+         * @param {Element} element Element tag (img or iframe)
+         * @param {String} componentName Component name (image or video)
+         */
+        selectComponent: function (element, componentName) {
+            if (componentName === 'image') {
+                if (!core.plugins.image) return;
+
+                core.removeRange();
+                core.callPlugin('image', function () {
+                    const size = core.plugins.resizing.call_controller_resize.call(core, element, 'image');
+                    core.plugins.image.onModifyMode.call(core, element, size);
+                    
+                    if (!util.getParentElement(element, '.se-image-container')) {
+                        core.plugins.image.openModify.call(core, true);
+                        core.plugins.image.update_image.call(core, true, true, true);
+                    }
+                });
+            } else if (componentName === 'video') {
+                if (!core.plugins.video) return;
+
+                core.removeRange();
+                core.callPlugin('video', function () {
+                    const size = core.plugins.resizing.call_controller_resize.call(core, element, 'video');
+                    core.plugins.video.onModifyMode.call(core, element, size);
+                });
+            }
         },
 
         /**
@@ -3143,7 +3199,7 @@ export default function (context, pluginCallButtons, plugins, lang, _options) {
                     }
 
                     /* Outdent */
-                    if (findOutdent && selectionParent.style.marginLeft && (util.getNumber((selectionParent.style.marginLeft) || 0), 0) > 0 && commandMap.OUTDENT) {
+                    if (findOutdent && selectionParent.style.marginLeft && util.getNumber(selectionParent.style.marginLeft, 0) > 0 && commandMap.OUTDENT) {
                         commandMapNodes.push('OUTDENT');
                         commandMap.OUTDENT.removeAttribute('disabled');
                         findOutdent = false;
@@ -3248,51 +3304,6 @@ export default function (context, pluginCallButtons, plugins, lang, _options) {
             this.setAttribute('contenteditable', false);
             this.removeEventListener('blur', event._cancelCaptionEdit);
         },
-        
-        _selectComponent: function (element, componentName) {
-            if (componentName === 'image') {
-                if (!core.plugins.image) return;
-
-                core.removeRange();
-                core.callPlugin('image', function () {
-                    const size = core.plugins.resizing.call_controller_resize.call(core, element, 'image');
-                    core.plugins.image.onModifyMode.call(core, element, size);
-                    
-                    if (!util.getParentElement(element, '.se-image-container')) {
-                        core.plugins.image.openModify.call(core, true);
-                        core.plugins.image.update_image.call(core, true, true, true);
-                    }
-                });
-            } else if (componentName === 'video') {
-                if (!core.plugins.video) return;
-
-                core.removeRange();
-                core.callPlugin('video', function () {
-                    const size = core.plugins.resizing.call_controller_resize.call(core, element, 'video');
-                    core.plugins.video.onModifyMode.call(core, element, size);
-                });
-            }
-        },
-
-        _removeComponentWithKey: function (resizingName) {
-            const container = context[resizingName]._container;
-            let focusEl = (container.previousElementSibling || container.nextElementSibling);
-            core.plugins[resizingName].destroy.call(core);
-
-            if (util.isComponent(focusEl)) {
-                const imageComponent = focusEl.querySelector('IMG');
-                const videoComponent = focusEl.querySelector('IFRAME');
-
-                if (imageComponent) {
-                    event._selectComponent(imageComponent, 'image');
-                } else if (videoComponent) {
-                    event._selectComponent(videoComponent, 'image');
-                }
-            } else {
-                focusEl = util.getChildElement(focusEl, function (current) { return current.childNodes.length === 0 || current.nodeType === 3; }, true);
-                core.setRange(focusEl, focusEl.textContent.length, focusEl, focusEl.textContent.length);
-            }
-        },
 
         onMouseDown_toolbar: function (e) {
             let target = e.target;
@@ -3394,17 +3405,17 @@ export default function (context, pluginCallButtons, plugins, lang, _options) {
 
                 if (imageComponent) {
                     e.preventDefault();
-                    event._selectComponent(imageComponent, 'image');
+                    core.selectComponent(imageComponent, 'image');
                     return;
                 } else if (videoComponent) {
                     e.preventDefault();
-                    event._selectComponent(videoComponent, 'video');
+                    core.selectComponent(videoComponent, 'video');
                     return;
                 }
             }
 
             const figcaption = util.getParentElement(targetElement, 'FIGCAPTION');
-            if (figcaption && figcaption.getAttribute('contenteditable') !== 'ture') {
+            if (figcaption && (!figcaption.getAttribute('contenteditable') || figcaption.getAttribute('contenteditable') === 'false')) {
                 e.preventDefault();
                 figcaption.setAttribute('contenteditable', true);
                 figcaption.focus();
@@ -3588,7 +3599,7 @@ export default function (context, pluginCallButtons, plugins, lang, _options) {
                     if (resizingName) {
                         e.preventDefault();
                         e.stopPropagation();
-                        event._removeComponentWithKey(resizingName);
+                        core.plugins[resizingName].destroy.call(core);
                         break;
                     }
 
@@ -3626,8 +3637,8 @@ export default function (context, pluginCallButtons, plugins, lang, _options) {
                             }	
                         }	
 
-                        if (util.isComponent(commonCon.previousSibling)) {
-                            const previousEl = commonCon.previousSibling;
+                        if (util.isComponent(commonCon.previousSibling) || (commonCon.nodeType === 3 && !commonCon.previousSibling && range.startOffset === 0 && range.endOffset === 0 && util.isComponent(formatEl.previousSibling))) {
+                            const previousEl = formatEl.previousSibling;
                             util.removeItem(previousEl);
                         }
                     }
@@ -3637,7 +3648,7 @@ export default function (context, pluginCallButtons, plugins, lang, _options) {
                     if (resizingName) {
                         e.preventDefault();
                         e.stopPropagation();
-                        event._removeComponentWithKey(resizingName);
+                        core.plugins[resizingName].destroy.call(core);
                         break;
                     }
 
@@ -3654,22 +3665,9 @@ export default function (context, pluginCallButtons, plugins, lang, _options) {
                                 e.stopPropagation();
                                 if (util.hasClass(nextEl, 'se-image-container') || /^IMG$/i.test(nextEl.nodeName)) {
                                     nextEl = /^IMG$/i.test(nextEl.nodeName) ? nextEl : nextEl.querySelector('img');
-                                    core.callPlugin('image', function () {
-                                        const size = core.plugins.resizing.call_controller_resize.call(core, nextEl, 'image');
-                                        core.plugins.image.onModifyMode.call(core, nextEl, size);
-                                        
-                                        if (!util.getParentElement(nextEl, '.se-component')) {
-                                            core.plugins.image.openModify.call(core, true);
-                                            core.plugins.image.update_image.call(core, true, true, false);
-                                        }
-                                    });
+                                    core.selectComponent(nextEl, 'image');
                                 } else if (util.hasClass(nextEl, 'se-video-container')) {
-                                    e.stopPropagation();
-                                    core.callPlugin('video', function () {
-                                        const iframe = nextEl.querySelector('iframe');
-                                        const size = core.plugins.resizing.call_controller_resize.call(core, iframe, 'video');
-                                        core.plugins.video.onModifyMode.call(core, iframe, size);
-                                    });
+                                    core.selectComponent(nextEl.querySelector('iframe'), 'video');
                                 }
                             }
 

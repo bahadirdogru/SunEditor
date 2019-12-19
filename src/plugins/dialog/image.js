@@ -941,7 +941,7 @@ export default {
             cover.style.width = container.style.width;
         } else {
             container.style.minWidth = '';
-            cover.style.width = this.context.resizing._rotateVertical ? (element.style.height || element.offsetHeight) : ((!element.style.width || element.style.width === 'auto') ? '' : '100%');
+            cover.style.width = this.context.resizing._rotateVertical ? (element.style.height || element.offsetHeight) : ((!element.style.width || element.style.width === 'auto') ? '' : element.style.width || '100%');
         }
 
         if (!this.util.hasClass(container, '__se__float-' + align)) {
@@ -964,12 +964,17 @@ export default {
         const imageEl = element || this.context.image._element;
         const imageContainer = this.util.getParentElement(imageEl, this.util.isComponent) || imageEl;
         const dataIndex = imageEl.getAttribute('data-index') * 1;
+        let focusEl = (imageContainer.previousElementSibling || imageContainer.nextElementSibling);
         
         this.util.removeItem(imageContainer);
         this.plugins.image.init.call(this);
 
         this.controllersOff();
+
+        // focus
+        this.focusEdge(focusEl);
         
+        // event
         if (dataIndex >= 0) {
             const imagesInfo = this._variable._imagesInfo;
 

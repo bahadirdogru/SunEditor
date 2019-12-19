@@ -1109,6 +1109,33 @@
             <dl class="details"></dl>
 
 
+            <h4 class="name" id="focusEdge"><span class="type-signature"></span>focusEdge<span class="signature">(focusEl)</span><span
+                    class="type-signature"></span></h4>
+            <div class="description">
+                If "focusEl" is a component, then that component is selected; if it is a format element, the last text is selected
+            </div>
+            <h5>Parameters:</h5>
+            <table class="params">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th class="last">Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td class="name"><code>focusEl</code></td>
+                    <td class="type">
+                        <span class="param-type">Element</span>
+                    </td>
+                    <td class="description last">Focus element.</td>
+                </tr>
+                </tbody>
+            </table>
+            <dl class="details"></dl>
+
+
             <h4 class="name" id="setRange"><span class="type-signature"></span>setRange<span class="signature">(startCon, startOff, endCon, endOff)</span><span
                 class="type-signature"></span></h4>
             <div class="description">
@@ -1343,6 +1370,40 @@
                         <span class="param-type">Boolean</span>
                     </td>
                     <td class="description last">When true, it does not update the history stack and the selection object and return EdgeNodes (util.getEdgeChildNodes)</td>
+                </tr>
+                </tbody>
+            </table>
+            <dl class="details"></dl>
+
+
+            <h4 class="name" id="selectComponent"><span class="type-signature"></span>selectComponent<span class="signature">(element, componentName)</span><span
+                    class="type-signature"></span></h4>
+            <div class="description">
+                The component(image, video) is selected and the resizing module is called.
+            </div>
+            <h5>Parameters:</h5>
+            <table class="params">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th class="last">Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td class="name"><code>element</code></td>
+                    <td class="type">
+                        <span class="param-type">Element</span>
+                    </td>
+                    <td class="description last">Element tag (img or iframe)</td>
+                </tr>
+                <tr>
+                    <td class="name"><code>componentName</code></td>
+                    <td class="type">
+                        <span class="param-type">String</span>
+                    </td>
+                    <td class="description last">Component name (image or video)</td>
                 </tr>
                 </tbody>
             </table>
@@ -1838,6 +1899,7 @@
         <li><a href="document-editor.html#controllersOff">controllersOff</a></li>
         <li><a href="document-editor.html#execCommand">execCommand</a></li>
         <li><a href="document-editor.html#focus">focus</a></li>
+        <li><a href="document-editor.html#focusEdge">focusEdge</a></li>
         <li><a href="document-editor.html#setRange">setRange</a></li>
         <li><a href="document-editor.html#removeRange">removeRange</a></li>
         <li><a href="document-editor.html#getRange">getRange</a></li>
@@ -1850,6 +1912,7 @@
         <li><a href="document-editor.html#closeLoading">closeLoading</a></li>
         <li><a href="document-editor.html#appendFormatTag">appendFormatTag</a></li>
         <li><a href="document-editor.html#insertComponent">insertComponent</a></li>
+        <li><a href="document-editor.html#selectComponent">selectComponent</a></li>
         <li><a href="document-editor.html#insertNode">insertNode</a></li>
         <li><a href="document-editor.html#removeNode">removeNode</a></li>
         <li><a href="document-editor.html#applyRangeFormatElement">applyRangeFormatElement</a></li>
